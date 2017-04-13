@@ -17,7 +17,8 @@ class TestExecutor(unittest.TestCase):
         print("\nBefore execution\n{}".format(plan))
         Executor(plan, 2, 1.0, print_task).execute()
         print("\nAfter execution\n{}".format(plan))
-        self.assertEqual(plan.is_incomplete(), False, "All tasks have been executed")
+        self.assertEqual(plan.is_incomplete(), False, "Plan has been marked complete")
+        map(lambda x: self.assertIn(x, plan.completed_tasks(), "Task {} has been completed".format(x)), [x for x in range(0, len(plan.plan_as_dict_array))])
 
 if __name__ == '__main__':
     unittest.main()
