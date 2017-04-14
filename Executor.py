@@ -11,6 +11,7 @@ class Executor:
         self.loop = asyncio.get_event_loop()
         self.queue = asyncio.Queue(loop=self.loop, maxsize=max_concurrency)
         self.execution_function = execution_function
+        self.executors = 0
 
     async def pop_one(self):
         while self.execution_plan.is_incomplete():
@@ -24,29 +25,22 @@ class Executor:
 
         return None
 
-    async def produce(self):
+    async def execute_task(self, task_id):
+        self.executors += 1
+        await asyncio.ensure_future(self.execution_function(task_id))
+        self.execution_plan.complete(task_id)
+        self.executors -= 1
+
+    async def execute(self):
         while self.execution_plan.is_incomplete():
-            doable_task = await self.pop_one()
-            await self.queue.put(doable_task)
-            #print("Enqueued task {0}; Queue {1}".format(doable_task, self.queue._queue))
-
-        # indicate the producer is done
-        await self.queue.put(None)
-
-    async def consume(self):
-        while True:
-            # wait for an item from the producer
-            task = await self.queue.get()
-            if task is None:
-                # the producer emits None to indicate that it is done
-                break
-
+            if self.executors < self.max_concurrency:
+                task_id = await self.pop_one()
+                print("Popped task {}".format(task_id))
+                asyncio.ensure_future(self.execute_task(task_id))
             else:
-                self.execution_function(task)
-                self.execution_plan.complete(task)
+                await asyncio.sleep(self.granularity)
 
-    def execute(self):
-        producer_coro = self.produce()
-        consumer_coro = self.consume()
-        self.loop.run_until_complete(asyncio.gather(producer_coro, consumer_coro))
+    def trigger_execution(self):
+        self.loop.run_until_complete(asyncio.gather(self.execute()))
         self.loop.close()
+

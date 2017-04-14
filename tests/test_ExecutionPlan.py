@@ -108,11 +108,13 @@ class TestExecutionPlan(unittest.TestCase):
 
         self.assertEqual(len(e.ready_tasks()), 0, "ready tasks till empty")
 
-    @unittest.skip("not implemented")
-    def test_validate_task_presence(self):
-        # execution_plan = ExecutionPlan()
-        # self.assertEqual(expected, execution_plan.validate_task_presence(t))
-        assert False # TODO: implement your test here
+    def test_from_tree_string(self):
+        simple_plan_string = "task0\n\ttask1\ntask2"
+        print(simple_plan_string)
+        e = ExecutionPlan().from_tree_string(simple_plan_string)
+        print(e.plan_as_dict_array)
+        print(e)
+        self.assertEqual(simple_plan_string, str(e).replace(" Ready ", "")[:-1])  # str returns string with trailing \n
 
 if __name__ == '__main__':
     unittest.main()

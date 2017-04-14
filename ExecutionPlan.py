@@ -4,14 +4,43 @@ class ExecutionPlan(object):
         self.plan_as_dict_array = []
         self.completed_list = []
 
+    """ constructor-like function for building plan from dict array
+    """
+    def from_dict_array(self, d):
+        self.plan_as_dict_array = [x.copy() for x in d]  # create a copy of dict array
+        return self
+
+    """ constructor-like function for building plan from formatted string
+    """
+    def from_tree_string(self, tree_string):
+        def extract_name(s):
+            return s.replace('\t', '')
+
+        parents = [None]
+
+        def turn_line_to_dict(i, lines, parents):
+            indent_level = lines[i].count("\t")
+
+            prev_indent_level = 0
+            if i > 0:
+                prev_indent_level = lines[i-1].count("\t")
+
+            if indent_level == prev_indent_level + 1:
+                parents.append(extract_name(lines[i-1]))
+            elif indent_level == prev_indent_level - 1:
+                parents.pop()
+            elif indent_level > prev_indent_level + 1 or indent_level < prev_indent_level - 1:
+                raise ValueError("Invalid indentation for line {}".format(line))
+
+            return {"name": extract_name(lines[i]), "dependency": parents[-1]}  # dependency will be the last parent
+
+        lines = tree_string.split('\n')
+        self.plan_as_dict_array = list(map(lambda l: turn_line_to_dict(l, lines, parents), range(0, len(lines))))
+
+        return self
+
     def is_incomplete(self):
         return len(self.plan_as_dict_array) != len(self.completed_list)
-
-    def __validate_task_presence(self, t):
-        if t in self.plan_as_dict_array:
-            return True
-        else:
-            raise LookupError("Task {0} not found in execution plan".format(t))
 
     def is_task_complete(self, index):
         return index in self.completed_list
@@ -46,10 +75,6 @@ class ExecutionPlan(object):
             print("{} completed".format(t['name']))
         else:
             raise ValueError("Task is not ready for completion")
-
-    def from_dict_array(self, d):
-        self.plan_as_dict_array = [x.copy() for x in d]  # create a copy of dict array
-        return self
 
     def __get_dependants(self, i):
         return [self.plan_as_dict_array.index(j) for j in self.plan_as_dict_array if
