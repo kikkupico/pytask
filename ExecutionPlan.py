@@ -2,6 +2,7 @@ class ExecutionPlan(object):
 
     def __init__(self):
         self.plan_as_dict_array = []
+        self.started_list = []
         self.completed_list = []
 
     """ constructor-like function for building plan from dict array
@@ -59,7 +60,10 @@ class ExecutionPlan(object):
             is_dependency_complete = True
         else:
             is_dependency_complete = self.is_task_complete(index=[i for i in range(0, len(self.plan_as_dict_array)) if self.plan_as_dict_array[i]['name'] == task['dependency']][0])
-        return is_dependency_complete and not self.is_task_complete(index=index)
+        return is_dependency_complete and not self.is_task_complete(index=index) and not self.is_task_started(index=index)
+
+    def is_task_started(self, index=None):
+        return index in self.started_list
 
     def ready_tasks(self):
         return [i for i in range(0, len(self.plan_as_dict_array)) if self.is_ready(index=i)]
@@ -67,14 +71,17 @@ class ExecutionPlan(object):
     def completed_tasks(self):
         return [self.plan_as_dict_array[i] for i in self.completed_list]
 
-    def complete(self, index):
+    def mark_started(self, index):
         if self.is_ready(index=index):
-            t = self.plan_as_dict_array[index]
-            loc = self.plan_as_dict_array.index(t)
-            self.completed_list.append(loc)
-            print("{} completed".format(t['name']))
+            self.started_list.append(index)
         else:
-            raise ValueError("Task is not ready for completion")
+            raise ValueError("Task is not ready to start")
+
+    def mark_completed(self, index):
+        if self.is_task_started(index=index):
+            self.completed_list.append(index)
+        else:
+            raise ValueError("Task cannot be completed before starting")
 
     def __get_dependants(self, i):
         return [self.plan_as_dict_array.index(j) for j in self.plan_as_dict_array if
@@ -89,11 +96,14 @@ class ExecutionPlan(object):
                 indentation = "".join(["\t" for x in range(0, indent_level)])
                 readiness = ""
                 completion = ""
+                started = ""
                 if self.is_ready(index=i):
                     readiness = " Ready "
                 if self.is_task_complete(index=i):
                     completion = " Completed "
-                str_this_item = indentation + self.plan_as_dict_array[i]['name'] + readiness + completion + "\n"
+                if self.is_task_started(index=i):
+                    started = " Started "
+                str_this_item = indentation + self.plan_as_dict_array[i]['name'] + readiness + started + completion + "\n"
                 str_dependents = "".join([stringify_item_with_dependencies(j, visited_list, indent_level + 1, accum) for j in self.__get_dependants(i)])
                 return accum + str_this_item + str_dependents
 
