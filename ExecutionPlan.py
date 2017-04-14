@@ -1,3 +1,6 @@
+import time
+import json
+
 class ExecutionPlan(object):
 
     def __init__(self):
@@ -73,12 +76,14 @@ class ExecutionPlan(object):
     def mark_started(self, index):
         if self.is_ready(index=index):
             self.started_list.append(index)
+            self.plan_as_dict_array[index]['start_time'] = time.time()
         else:
             raise ValueError("Task is not ready to start")
 
     def mark_completed(self, index):
         if self.is_task_started(index=index):
             self.completed_list.append(index)
+            self.plan_as_dict_array[index]['end_time'] = time.time()
         else:
             raise ValueError("Task cannot be completed before starting")
 
@@ -108,3 +113,32 @@ class ExecutionPlan(object):
 
         visited_list = []  # passing visited list in param as lists are passed by reference in python; TODO: refactor and find a better way
         return "".join([stringify_item_with_dependencies(i, visited_list, 0, "") for i in range(0, len(self.plan_as_dict_array))])
+
+    def as_json(self):
+        return json.dumps(self.plan_as_dict_array, indent=4, separators=(',', ': '))
+
+    def as_gantt(self):
+        if self.is_incomplete():
+            return "Not implemented for incomplete plans"
+        else:
+            time_range_start = self.plan_as_dict_array[0]['start_time']
+            time_range_end = self.plan_as_dict_array[0]['end_time']
+
+            for task in self.plan_as_dict_array:
+                if task['start_time'] < time_range_start:
+                    time_range_start = task['start_time']
+                if task['end_time'] > time_range_end:
+                    time_range_end = task['end_time']
+
+            time_step = (time_range_end - time_range_start) / 100
+
+            def n_chars(c, n):
+                return "".join(list(map(lambda x: c, range(0, int(n)))))
+
+            gantt_str = n_chars(".",(time_range_end-time_range_start)/time_step)+"\n"
+            for task in self.plan_as_dict_array:
+                prefix = n_chars(" ", (task['start_time']-time_range_start)/time_step)
+                actual = n_chars(".", (task['end_time']-task['start_time'])/time_step)
+                gantt_str = gantt_str + prefix + actual + "\n"
+
+            return gantt_str

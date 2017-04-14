@@ -1,4 +1,5 @@
 import unittest
+import time
 from ExecutionPlan import ExecutionPlan
 
 # TEST NOTES
@@ -79,6 +80,34 @@ class TestExecutionPlan(unittest.TestCase):
         print(e.plan_as_dict_array)
         print(e)
         self.assertEqual(simple_plan_string, str(e).replace(" Ready ", "")[:-1])  # str returns string with trailing \n
+
+    def test_as_json(self):
+        e = ExecutionPlan().from_dict_array(self.tasks_dict_array)
+        t = e.ready_tasks()[0]
+        e.mark_started(t)
+        time.sleep(2)
+        e.mark_completed(t)
+        t = e.ready_tasks()[0]
+        e.mark_started(t)
+        time.sleep(1)
+        e.mark_completed(t)
+        print(e)
+        print(e.as_json())
+
+    def test_as_gantt(self):
+        e = ExecutionPlan().from_dict_array(self.tasks_dict_array)
+
+        def complete_a_task():
+            t = e.ready_tasks()[0]
+            e.mark_started(t)
+            time.sleep(1)
+            e.mark_completed(t)
+
+        for task in e.plan_as_dict_array:
+            complete_a_task()
+
+        print(e)
+        print(e.as_gantt())
 
 if __name__ == '__main__':
     unittest.main()

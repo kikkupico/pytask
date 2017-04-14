@@ -37,7 +37,6 @@ class Executor:
                 if task_id is not None:  # check last comment in get_one_ready_task to understand this check
                     task = asyncio.ensure_future(self.execute_task(task_id))
                     started_tasks.append(task)
-                print(self.execution_plan)
                 await asyncio.sleep(self.granularity)
             else:
                 await asyncio.sleep(self.granularity)
