@@ -20,10 +20,9 @@ class Executor:
             else:
                 await asyncio.sleep(self.granularity)
 
-        return None
+        return None  # IMPORTANT: None can be returned if execution plan get completed in the middle of above loop (during await)
 
     async def execute_task(self, task_id):
-        #print("func:execute_task")
         self.executors += 1
         self.execution_plan.mark_started(task_id)
         await self.execution_coroutine(task_id)
@@ -31,17 +30,21 @@ class Executor:
         self.executors -= 1
 
     async def execute(self):
-        #print("func:execute")
+        started_tasks = []
         while self.execution_plan.is_incomplete():
             if self.executors < self.max_concurrency:
                 task_id = await self.get_one_ready_task()
-                if task_id is not None:
-                    asyncio.ensure_future(self.execute_task(task_id))
+                if task_id is not None:  # check last comment in get_one_ready_task to understand this check
+                    task = asyncio.ensure_future(self.execute_task(task_id))
+                    started_tasks.append(task)
                 print(self.execution_plan)
                 await asyncio.sleep(self.granularity)
             else:
                 await asyncio.sleep(self.granularity)
 
+        # for task in started_tasks:  # ensure that all tasks are completed before exiting execution
+        #     print(task)             # not sure if this is required; but just leaving it here in case it is required later
+        #     await task
+
     def trigger_execution(self):
         self.loop.run_until_complete(asyncio.gather(self.execute()))
-        self.loop.close()

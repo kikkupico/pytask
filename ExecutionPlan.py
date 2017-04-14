@@ -17,9 +17,7 @@ class ExecutionPlan(object):
         def extract_name(s):
             return s.replace('\t', '')
 
-        parents = [None]
-
-        def turn_line_to_dict(i, lines, parents):
+        def turn_line_to_dict(i, lines, parents_stack):
             indent_level = lines[i].count("\t")
 
             prev_indent_level = 0
@@ -27,16 +25,17 @@ class ExecutionPlan(object):
                 prev_indent_level = lines[i-1].count("\t")
 
             if indent_level == prev_indent_level + 1:
-                parents.append(extract_name(lines[i-1]))
+                parents_stack.append(extract_name(lines[i - 1]))
             elif indent_level == prev_indent_level - 1:
-                parents.pop()
+                parents_stack.pop()
             elif indent_level > prev_indent_level + 1 or indent_level < prev_indent_level - 1:
                 raise ValueError("Invalid indentation for line {}".format(line))
 
-            return {"name": extract_name(lines[i]), "dependency": parents[-1]}  # dependency will be the last parent
+            return {"name": extract_name(lines[i]), "dependency": parents_stack[-1]}  # dependency will be the last parent
 
+        parents_stack = [None]
         lines = tree_string.split('\n')
-        self.plan_as_dict_array = list(map(lambda l: turn_line_to_dict(l, lines, parents), range(0, len(lines))))
+        self.plan_as_dict_array = list(map(lambda l: turn_line_to_dict(l, lines, parents_stack), range(0, len(lines))))
 
         return self
 
