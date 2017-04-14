@@ -123,22 +123,26 @@ class ExecutionPlan(object):
         else:
             time_range_start = self.plan_as_dict_array[0]['start_time']
             time_range_end = self.plan_as_dict_array[0]['end_time']
+            biggest_name_size = len(self.plan_as_dict_array[0]['name'])
 
             for task in self.plan_as_dict_array:
                 if task['start_time'] < time_range_start:
                     time_range_start = task['start_time']
                 if task['end_time'] > time_range_end:
                     time_range_end = task['end_time']
+                if len(task['name']) > biggest_name_size:
+                    biggest_name_size = len(task['name'])
 
             time_step = (time_range_end - time_range_start) / 100
 
             def n_chars(c, n):
                 return "".join(list(map(lambda x: c, range(0, int(n)))))
 
-            gantt_str = n_chars(".",(time_range_end-time_range_start)/time_step)+"\n"
+            gantt_str = "".ljust(biggest_name_size+1) + n_chars(".",(time_range_end-time_range_start)/time_step)+"\n"
             for task in self.plan_as_dict_array:
+                name_padded = task['name'].ljust(biggest_name_size+1)
                 prefix = n_chars(" ", (task['start_time']-time_range_start)/time_step)
                 actual = n_chars(".", (task['end_time']-task['start_time'])/time_step)
-                gantt_str = gantt_str + prefix + actual + "\n"
+                gantt_str += name_padded + prefix + actual + "\n"
 
             return gantt_str
