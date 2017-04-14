@@ -87,7 +87,7 @@ class ExecutionPlan(object):
         else:
             raise ValueError("Task cannot be completed before starting")
 
-    def __get_dependants(self, i):
+    def get_dependants(self, i):
         return [self.plan_as_dict_array.index(j) for j in self.plan_as_dict_array if
                 j['dependency'] == self.plan_as_dict_array[i]['name']]
 
@@ -108,7 +108,7 @@ class ExecutionPlan(object):
                 if self.is_task_started(index=i):
                     started = " Started "
                 str_this_item = indentation + self.plan_as_dict_array[i]['name'] + readiness + started + completion + "\n"
-                str_dependents = "".join([stringify_item_with_dependencies(j, visited_list, indent_level + 1, accum) for j in self.__get_dependants(i)])
+                str_dependents = "".join([stringify_item_with_dependencies(j, visited_list, indent_level + 1, accum) for j in self.get_dependants(i)])
                 return accum + str_this_item + str_dependents
 
         visited_list = []  # passing visited list in param as lists are passed by reference in python; TODO: refactor and find a better way
@@ -133,7 +133,8 @@ class ExecutionPlan(object):
                 if len(task['name']) > biggest_name_size:
                     biggest_name_size = len(task['name'])
 
-            time_step = (time_range_end - time_range_start) / 100
+            time_step = (time_range_end - time_range_start) / 100.0
+            print("{0} {1} {2}".format(time_range_start, time_range_end, time_step))
 
             def n_chars(c, n):
                 return "".join(list(map(lambda x: c, range(0, int(n)))))
