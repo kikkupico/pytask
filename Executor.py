@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 
 class Executor:
@@ -6,7 +7,11 @@ class Executor:
         self.execution_plan = execution_plan
         self.max_concurrency = max_concurrency
         self.granularity = granularity
-        self.loop = asyncio.get_event_loop()
+        if sys.platform == 'win32':
+            self.loop = asyncio.ProactorEventLoop()
+            asyncio.set_event_loop(self.loop)
+        else:
+            self.loop = asyncio.get_event_loop()
         self.queue = asyncio.Queue(loop=self.loop, maxsize=max_concurrency)
         self.execution_coroutine = execution_coroutine
         self.executors = 0
@@ -25,7 +30,7 @@ class Executor:
     async def execute_task(self, task_id):
         self.executors += 1
         self.execution_plan.mark_started(task_id)
-        await self.execution_coroutine(task_id)
+        await self.execution_coroutine(loop=self.loop, task=self.execution_plan.plan_as_dict_array[task_id])
         self.execution_plan.mark_completed(task_id)
         self.executors -= 1
 

@@ -117,7 +117,7 @@ class ExecutionPlan(object):
     def as_json(self):
         return json.dumps(self.plan_as_dict_array, indent=4, separators=(',', ': '))
 
-    def as_gantt(self):
+    def as_gantt(self, resolution=100.0):
         if self.is_incomplete():
             return "Not implemented for incomplete plans"
         else:
@@ -133,8 +133,7 @@ class ExecutionPlan(object):
                 if len(task['name']) > biggest_name_size:
                     biggest_name_size = len(task['name'])
 
-            time_step = (time_range_end - time_range_start) / 100.0
-            print("{0} {1} {2}".format(time_range_start, time_range_end, time_step))
+            time_step = (time_range_end - time_range_start) / resolution
 
             def n_chars(c, n):
                 return "".join(list(map(lambda x: c, range(0, int(n)))))
